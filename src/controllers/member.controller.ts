@@ -59,7 +59,6 @@ export class MemberController {
         return this.service.onChangeRSAkey(req.user['id'], body);
     }
 
-
     @Get() // แสดงข้อมูลรายการสมาชิก
     @UseGuards(new RoleGuard(RoleAccount.Admin, RoleAccount.Superadmin))
     showMember(@Query(new ValidationPipe()) query: SearchModel) {
@@ -89,8 +88,15 @@ export class MemberController {
     @Delete(`:id`) // ลบข้อมูลสมาชิกเดี่ยว
     @UseGuards(new RoleGuard(RoleAccount.Admin, RoleAccount.Superadmin))
     deldeteMember(@Param(new ValidationPipe()) param: ParamMemberModel) {
-        console.log(param);
+        // console.log(param);
         return this.service.deleteMemberItem(param.id);
+    }
+
+    @Post(`:id`) // อัพเดตแฟลก
+    @UseGuards(new RoleGuard(RoleAccount.Admin, RoleAccount.Superadmin))
+    updateFlag(@Param(new ValidationPipe()) param: ParamMemberModel) {
+        console.log(param);
+        return this.service.updataFlagofMemberItem(param.id);
     }
 
 

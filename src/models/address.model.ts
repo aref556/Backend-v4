@@ -11,11 +11,22 @@ export class AddressModel implements IAddress {
     // @IsLongitude()
     longitude: string;
 
+    @IsNotEmpty()
     organization: string;
+
+    @IsNotEmpty()
     num: string;
+
+    @IsNotEmpty()
     subdistrict: string;
+
+    @IsNotEmpty()
     district: string;
+
+    @IsNotEmpty()
     province: string;
+
+    @IsNotEmpty()
     zipcode: string;
 
 }

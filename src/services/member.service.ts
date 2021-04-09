@@ -30,6 +30,18 @@ export class MemberService {
         return await this.MemberCollection.remove({ _id: memberID });
     }
 
+    // อัพเดท flag
+    async updataFlagofMemberItem(memberID: any) {
+
+        const memberUpdate = await this.MemberCollection.findById(memberID);
+        if (!memberUpdate) throw new BadRequestException('ไม่มีข้อมูลนี้ในระบบ');
+        if(memberUpdate.flagrsa == 1) return memberUpdate;
+        if(memberUpdate.flagrsa == 2) {
+            memberUpdate.flagrsa = 3;
+            return memberUpdate;
+        }
+    }
+
     //แก้ไชช้อมูลสมาชิก
     async updateMemberItem(memberID: any, body: IAccount) {
         const memberUpdate = await this.MemberCollection.findById(memberID);
@@ -109,7 +121,7 @@ export class MemberService {
 
     // แสดงข้อมูลสมาชิก
     async getMemberItems(searchOption: ISearch): Promise<IMember> {
-        let queryItemFunction = () => this.MemberCollection.find({}, { image: false }); // ตอนเสิชจะได้ไม่ต้องมา query ซ้ำๆ
+        let queryItemFunction = () => this.MemberCollection.find({'role': 1}, { image: false }); // ตอนเสิชจะได้ไม่ต้องมา query ซ้ำๆ
 
         // ส่วนของการค้นหา
         if (searchOption.searchText && searchOption.searchType) {
@@ -117,7 +129,7 @@ export class MemberService {
             const type = searchOption.searchType;
             const conditions = {};
             switch (type) {
-                case 'role': // เนื่องจาก ตัวแปร role จะทำการแปลงจาก enum เป้น int ไปแล้ว
+                case 'flagrsa': // เนื่องจาก ตัวแปร role จะทำการแปลงจาก enum เป้น int ไปแล้ว
                     conditions[type] = text;
                     // จริงๆเราต้องการ .find({email ไง แต่ email ที่ว่าดันเป็น text ไม่ใช่ type เลยต้องทำแบบนี้})
                     queryItemFunction = () => this.MemberCollection.find(conditions, { image: false });      // {} คือ condition เอาไว้สำหรับ compiler จะมองเห็นเป้น type
@@ -150,6 +162,51 @@ export class MemberService {
         const totalItems = await queryItemFunction().countDocuments({});
         return { items, totalItems };
     }
+
+    async getAdminItems(searchOption: ISearch): Promise<IMember> {
+        let queryItemFunction = () => this.MemberCollection.find({'role': 1}, { image: false }); // ตอนเสิชจะได้ไม่ต้องมา query ซ้ำๆ
+
+        // ส่วนของการค้นหา
+        if (searchOption.searchText && searchOption.searchType) {
+            const text = searchOption.searchText;
+            const type = searchOption.searchType;
+            const conditions = {};
+            switch (type) {
+                case 'flagrsa': // เนื่องจาก ตัวแปร role จะทำการแปลงจาก enum เป้น int ไปแล้ว
+                    conditions[type] = text;
+                    // จริงๆเราต้องการ .find({email ไง แต่ email ที่ว่าดันเป็น text ไม่ใช่ type เลยต้องทำแบบนี้})
+                    queryItemFunction = () => this.MemberCollection.find(conditions, { image: false });      // {} คือ condition เอาไว้สำหรับ compiler จะมองเห็นเป้น type
+                    break;
+                case 'updated':
+                    // console.log(text); // ซึ่งแสดงเป็น object 2 ตัว คือ from กับ to
+                    queryItemFunction = () => this.MemberCollection.find({
+                        updated: { // กำสั่งพวกนนี้มาจาก mongoose 
+                            $gt: text['from'],
+                            $lt: text['to']
+                        }
+                    }, { image: false });
+                    break;
+                default:
+                    conditions[type] = new RegExp(text, 'i');  // ใส่ i เพื่อให้สามารถค้นหาพิม์ใหญ่ พิม์เล็กได้
+                    // จริงๆเราต้องการ .find({email ไง แต่ email ที่ว่าดันเป็น text ไม่ใช่ type เลยต้องทำแบบนี้})
+                    queryItemFunction = () => this.MemberCollection.find(conditions, { image: false });      // {} คือ condition เอาไว้สำหรับ compiler จะมองเห็นเป้น type
+                    break;
+            }
+
+        }
+
+        // แบ่งหน้าเพจ
+        const items = await queryItemFunction()
+            // .find({}, { image: false }) // หาข้อมูลของ item โดยไม่เอา image
+            .sort({ updated: -1 }) // -1 คือจากมากไปหาน้อย, 1 คือ จาก น้อยไปหามาก
+            .skip((searchOption.startPage - 1) * searchOption.limitPage) // ฝั่ง frontend ตั้งไว้ = 1
+            .limit(searchOption.limitPage); // โดยฝั่ง frontend ตั้งไว้ limitPage = 5
+        // ผลรวมของหน้าเพจทั้งหมด 
+        const totalItems = await queryItemFunction().countDocuments({});
+        return { items, totalItems };
+    }
+
+
 
 
     // เปลี่ยนรหัสผ่าน
