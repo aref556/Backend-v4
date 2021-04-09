@@ -5,6 +5,7 @@ export interface IAccount {
 
     rsakey: string;
     flagrsa: FlagAccount;
+    flagserver: string;
     macaddress: string;
     hashmac: string;
     // address: string;
@@ -41,6 +42,7 @@ export interface IRegister {
 
     rsakey: string;
     flagrsa: FlagAccount;
+    flagserver: string;
     macaddress: string;
     hashmac: string;
     // address: string;
@@ -114,7 +116,7 @@ export enum RoleAccount {
 // สถานะของ rsa user
 
 export enum FlagAccount {
-    NotHave = 1,
+    Not_Have = 1,
     Have = 2,
     Approved = 3,
 }

@@ -3,17 +3,17 @@ import { IForgot } from "src/interfaces/app.interface";
 
 export class ForgotModel implements IForgot{
 
-    // @IsNotEmpty()
+    @IsNotEmpty()
     username: string;
 
-    // @IsNotEmpty()
-    // @IsMACAddress()
+    @IsNotEmpty()
+    @IsMACAddress()
     macaddress: string;
 
-    // @IsNotEmpty()
+    @IsNotEmpty()
     newpassword: string;
 
-    // @IsNotEmpty()
+    @IsNotEmpty()
     cpassword: string;
 
 }

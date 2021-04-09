@@ -9,7 +9,7 @@ export class AdminProfileModel implements IProfile {
     @IsNotEmpty()
     lastname: string;
 
-
+    
     telphone: string;
 
     email: string;

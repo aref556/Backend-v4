@@ -1,29 +1,29 @@
-import { IsNotEmpty, IsNumber, Matches } from "class-validator";
+import { IsMACAddress, IsNotEmpty, Matches } from "class-validator";
+import { FlagAccount, IAccount, RoleAccount } from "src/interfaces/app.interface";
 
-import { FlagAccount, IRegister, RoleAccount } from "src/interfaces/app.interface";
 
-export class RegisterModel implements IRegister {
+export class CreateAdminModel implements IAccount {
 
     @IsNotEmpty()
     username: string;
 
-    @IsNotEmpty()
+    @Matches(/^[A-z0-9!@#$%^&*]{8,}$/)
     password: string;
+
 
     rsakey: string;
     flagrsa: FlagAccount;
     flagserver: string;
-
     macaddress: string;
-    hashmac: string;
 
+
+    hashmac: string;
     firstname: string;
     lastname: string;
     telphone: string;
     email: string;
     facebook: string;
     line: string;
-
     latitude: string;
     longitude: string;
     organization: string;
@@ -32,7 +32,10 @@ export class RegisterModel implements IRegister {
     district: string;
     province: string;
     zipcode: string;
-   
+    id?: any;
+    image?: string;
+    role?: RoleAccount;
+    created?: Date;
+    updated?: Date;
     
-
 }

@@ -24,6 +24,7 @@ export class AppService {
         model.role = 1;
         model.rsakey = '';
         model.flagrsa = 1;
+        model.flagserver = '0';
         model.macaddress = body.macaddress;
         model.firstname = '';
         model.lastname = '';

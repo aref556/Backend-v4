@@ -47,19 +47,18 @@ export class MemberService {
         const memberUpdate = await this.MemberCollection.findById(memberID);
         if (!memberUpdate) throw new BadRequestException('ไม่มีข้อมูลนี้ในระบบ');
         try {
+            memberUpdate.username = body.username;
             memberUpdate.firstname = body.firstname;
             memberUpdate.lastname = body.lastname;
             memberUpdate.image = body.image || '';
             memberUpdate.role = body.role;
             memberUpdate.email = body.email;
+            memberUpdate.password = generate(body.password) || '';
+            memberUpdate.macaddress = body.macaddress;
+            memberUpdate.hashmac = generate(body.hashmac);
 
-            // ตรวจสอบการเปลี่ยนรหัสผ่าย
-            if (body.password && body.password.trim() != ``) { // .trim คือตัดค่าว่างเริ่มแรก และตอนจจบสตริง
-                memberUpdate.password = generate(body.password);
-            }
-
-            const memberUpdateCount = await this.MemberCollection.countDocuments({ email: body.email });
-            if (memberUpdate.email != body.email && memberUpdateCount > 0) throw new BadRequestException('อีเมลล์นี้มีในระบบแล้ว');
+            const memberUpdateCount = await this.MemberCollection.countDocuments({ username: body.username });
+            if (memberUpdate.username != body.username && memberUpdateCount > 0) throw new BadRequestException('บัญชีนี้มีในระบบแล้ว');
 
             const updated = await this.MemberCollection.update({ _id: memberID }, memberUpdate);
             if (!updated.ok) throw new BadRequestException('ไม่สามารถแก้ไขข้อมูลได้');
@@ -70,6 +69,7 @@ export class MemberService {
             throw new BadRequestException(ex.message);
         }
     }
+
 
     //แสดงข้อมูลสมาชิกคนเดียว
     async getMemberItem(memberID: any) {
@@ -98,6 +98,7 @@ export class MemberService {
         memberCreate.email = body.email;
         memberCreate.rsakey = '';
         memberCreate.flagrsa = 1;
+        memberCreate.flagserver = '0';
         memberCreate.telphone = '';
         memberCreate.facebook = '';
         memberCreate.line = '';
@@ -164,7 +165,7 @@ export class MemberService {
     }
 
     async getAdminItems(searchOption: ISearch): Promise<IMember> {
-        let queryItemFunction = () => this.MemberCollection.find({'role': 1}, { image: false }); // ตอนเสิชจะได้ไม่ต้องมา query ซ้ำๆ
+        let queryItemFunction = () => this.MemberCollection.find({'role': 2}, { image: false }); // ตอนเสิชจะได้ไม่ต้องมา query ซ้ำๆ
 
         // ส่วนของการค้นหา
         if (searchOption.searchText && searchOption.searchType) {
@@ -207,8 +208,6 @@ export class MemberService {
     }
 
 
-
-
     // เปลี่ยนรหัสผ่าน
     // async onChangeSSHkey(memberID: any, body: IChangeSSHkey) {
     //     // const memberItem = await this.MemberCollection.findById(memberID);
@@ -220,10 +219,13 @@ export class MemberService {
     //     return updated;
     // }
 
+
+
     async onChangeRSAkey(memberID: any, body: IChangeRSAkey) {
         // const memberItem = await this.MemberCollection.findById(memberID);
         const updated = await this.MemberCollection.updateOne({ _id: memberID }, {
             rsakey: body.rsakey,
+            flagrsa: 2,
         });
         return updated;
     }
