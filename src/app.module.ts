@@ -26,7 +26,7 @@ import { AdminController } from './controllers/admin.controller';
         AppService,
         JwtAuthenService,
         JwtAuthenStrategy,
-        MemberService
+        MemberService,
     ]
 })
 export class AppModule { }

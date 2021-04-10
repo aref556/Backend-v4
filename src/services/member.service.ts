@@ -88,7 +88,7 @@ export class MemberService {
         const memberCreate = await this.MemberCollection.create(body);
         memberCreate.id = memberCreate._id;
         memberCreate.username = body.username;
-        memberCreate.password = body.password;
+        memberCreate.password = body.password || '';
         memberCreate.macaddress = body.macaddress;
         memberCreate.hashmac = generate(body.macaddress);
         memberCreate.role = body.role;

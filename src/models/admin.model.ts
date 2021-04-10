@@ -39,3 +39,34 @@ export class CreateAdminModel implements IAccount {
     updated?: Date;
     
 }
+
+export class UpdateAdminModel implements IAccount {
+    username: string;
+    password: string;
+    rsakey: string;
+    flagrsa: FlagAccount;
+    flagserver: string;
+    macaddress: string;
+    hashmac: string;
+    firstname: string;
+    lastname: string;
+    telphone: string;
+    email: string;
+    facebook: string;
+    line: string;
+    latitude: string;
+    longitude: string;
+    organization: string;
+    num: string;
+    subdistrict: string;
+    district: string;
+    province: string;
+    zipcode: string;
+    id?: any;
+    image?: string;
+    role?: RoleAccount;
+    created?: Date;
+    updated?: Date;
+
+    
+}

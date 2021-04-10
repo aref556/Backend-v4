@@ -1,11 +1,11 @@
-import { IsMongoId, IsNotEmpty } from "class-validator";
+import { IsMACAddress, IsMongoId, IsNotEmpty } from "class-validator";
 import { FlagAccount, IAccount, RoleAccount } from "src/interfaces/app.interface";
 
 export class CreateMemberModel implements IAccount {
     @IsNotEmpty()
     username: string;
 
-    @IsNotEmpty()
+    // @IsNotEmpty()
     password: string;
 
 
@@ -15,6 +15,7 @@ export class CreateMemberModel implements IAccount {
 
 
     @IsNotEmpty()
+    @IsMACAddress()
     macaddress: string;
 
 
@@ -51,6 +52,7 @@ export class CreateMemberModel implements IAccount {
     
 }
 export class UpdateMemberModel implements IAccount {
+    
     username: string;
     password: string;
     rsakey: string;

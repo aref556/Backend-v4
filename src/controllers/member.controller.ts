@@ -8,7 +8,7 @@ import { AddressModel } from 'src/models/address.model';
 import { AdminProfileModel } from 'src/models/admin-profile.model';
 import { ChangePasswordModel } from 'src/models/change-password.model';
 import { ChangeRSAkeyModel } from 'src/models/change-rsakey.model';
-import { CreateMemberModel, ParamMemberModel } from 'src/models/member.model';
+import { CreateMemberModel, ParamMemberModel, UpdateMemberModel } from 'src/models/member.model';
 import { ProfileModel } from 'src/models/profile.model';
 import { SearchModel } from 'src/models/search.model';
 import { ValidationPipe } from 'src/pipes/validation.pipe';
@@ -81,7 +81,7 @@ export class MemberController {
 
     @Put(`:id`) // แก้ไขข้อมูลสมาชิกเดี่ยว
     @UseGuards(new RoleGuard(RoleAccount.Admin, RoleAccount.Superadmin))
-    updateMember(@Param(new ValidationPipe()) param: ParamMemberModel, @Body(new ValidationPipe()) body: CreateMemberModel) {
+    updateMember(@Param(new ValidationPipe()) param: ParamMemberModel, @Body(new ValidationPipe()) body: UpdateMemberModel) {
         return this.service.updateMemberItem(param.id, body);
     }
 
