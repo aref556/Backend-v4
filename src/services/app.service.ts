@@ -59,7 +59,9 @@ export class AppService {
         const member = await this.MemberCollection.findOne({ username: body.username });
         if (!member) throw new BadRequestException('ไม่พยข้อมูลการลงทะเบียนของผู้ใช้นี้');
         if (verify(body.password, member.password)) {
-          member.updated = new Date();
+          await this.MemberCollection.updateOne({username: body.username}, {
+            updated: new Date(),
+          });
           return { accessToken: await this.authenService.generateAccessToken(member)};
         }
         throw new BadRequestException('บัญชีผู้ใช้้หรือรหัสผ่านไม่ถูกต้อง');
