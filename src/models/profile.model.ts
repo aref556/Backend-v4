@@ -1,4 +1,4 @@
-import { IsNotEmpty } from "class-validator";
+import { IsNotEmpty, Matches } from "class-validator";
 import { IProfile } from "src/interfaces/app.interface";
 
 export class ProfileModel implements IProfile{
@@ -8,7 +8,8 @@ export class ProfileModel implements IProfile{
     @IsNotEmpty()
     lastname: string;
 
-    // @IsNotEmpty()
+    @IsNotEmpty()
+    @Matches(/^[0-9]{10,10}$/)
     telphone: string;
 
     @IsNotEmpty()

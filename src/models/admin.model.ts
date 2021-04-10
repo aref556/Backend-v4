@@ -41,7 +41,10 @@ export class CreateAdminModel implements IAccount {
 }
 
 export class UpdateAdminModel implements IAccount {
+    @IsNotEmpty()
     username: string;
+
+    
     password: string;
     rsakey: string;
     flagrsa: FlagAccount;

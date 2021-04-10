@@ -53,7 +53,7 @@ export class MemberService {
             memberUpdate.image = body.image || '';
             memberUpdate.role = body.role;
             memberUpdate.email = body.email;
-            memberUpdate.password = generate(body.password) || '';
+            // memberUpdate.password = generate(body.password) || '';
             memberUpdate.macaddress = body.macaddress;
             memberUpdate.hashmac = generate(body.hashmac);
 

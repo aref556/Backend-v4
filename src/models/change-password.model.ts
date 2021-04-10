@@ -1,6 +1,5 @@
 import { IsNotEmpty, Matches } from "class-validator";
 import { IChangePassword } from "src/interfaces/app.interface";
-// import { IsComparePassword } from "src/pipes/validation.pipe";
 
 export class ChangePasswordModel implements IChangePassword {
 
