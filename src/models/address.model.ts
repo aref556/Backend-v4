@@ -4,11 +4,11 @@ import { IAddress } from "src/interfaces/app.interface";
 export class AddressModel implements IAddress {
 
     @IsNotEmpty()
-    // @IsLatitude()
+    @IsLatitude()
     latitude: string;
 
     @IsNotEmpty()
-    // @IsLongitude()
+    @IsLongitude()
     longitude: string;
 
     @IsNotEmpty()
