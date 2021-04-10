@@ -24,7 +24,7 @@ export class AdminController {
 
     @Put(`:id`) // แก้ไขข้อมูลสมาชิกเดี่ยว
     @UseGuards(new RoleGuard(RoleAccount.Superadmin))
-    updateMember(@Param(new ValidationPipe()) param: ParamMemberModel, @Body(new ValidationPipe()) body: UpdateAdminModel) {
+    updateAdmin(@Param(new ValidationPipe()) param: ParamMemberModel, @Body(new ValidationPipe()) body: UpdateAdminModel) {
         return this.service.updateMemberItem(param.id, body);
     }
 
