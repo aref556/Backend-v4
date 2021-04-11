@@ -2,18 +2,17 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { generate } from "password-hash";
-import { IAccount, IMember, ISearch } from "src/interfaces/app.interface";
+import { IAccount, IMember, IProfile, ISearch } from "src/interfaces/app.interface";
 import { IMemberDocument } from "src/interfaces/member.interface";
-
-
+import * as f from 'fs';
 
 @Injectable()
 export class AdminService {
 
     constructor(@InjectModel('Member') private MemberCollection: Model<IMemberDocument>) { }
 
-     //แก้ไชช้อมูลสมาชิก
-     async updateAdminItem(memberID: any, body: IAccount) {
+    //แก้ไชช้อมูลสมาชิก
+    async updateAdminItem(memberID: any, body: IAccount, accessToken: string) {
         const memberUpdate = await this.MemberCollection.findById(memberID);
         if (!memberUpdate) throw new BadRequestException('ไม่มีข้อมูลนี้ในระบบ');
         try {
@@ -36,9 +35,26 @@ export class AdminService {
 
             const updated = await this.MemberCollection.updateOne({ _id: memberID }, memberUpdate);
             if (!updated.ok) throw new BadRequestException('ไม่สามารถแก้ไขข้อมูลได้');
+
+            // เก็บ Log file
+            const dataForLog = await this.MemberCollection.findOne({ username: body.username });
+            const data = new Uint8Array(Buffer.from(
+                ` เวลา ${new Date()} จาก {api/admin/${memberID}, PUT} ผู้ใช้ [${accessToken}] : แก้ไขข้อมูล ${dataForLog.username} [id: ${dataForLog.id}] \n`
+            ));
+            f.open('userlog.log', 'a', (err, fd) => {
+                f.appendFile(fd, data, `utf8`, (err) => {
+                    f.close(fd, (err) => {
+                        if (err) throw err;
+                    });
+                    if (err) throw err;
+                });
+                if (err) throw err;
+            });
+
+
+
             return await this.MemberCollection.findById(memberID, {
                 password: false,
-                hashmac: false,
             });
 
         }
@@ -49,7 +65,7 @@ export class AdminService {
 
 
     //สร้างข้อมูลสมาชิกใหม่
-    async createAdminItem(body: IAccount) {
+    async createAdminItem(body: IAccount, accessToken: string) {
         const count = await this.MemberCollection.countDocuments({ username: body.username });
         if (count > 0) throw new BadRequestException(`มีบัญชีผู้ใช้นี้อยู่ในระบบแล้ว`);
         body.password = generate(body.password);
@@ -62,25 +78,36 @@ export class AdminService {
         memberCreate.firstname = body.firstname;
         memberCreate.lastname = body.lastname;
         memberCreate.email = body.email;
-        memberCreate.rsakey = '';
-        memberCreate.flagrsa = 1;
-        memberCreate.flagserver = '0';
         memberCreate.telphone = body.telphone;
         memberCreate.facebook = body.facebook;
         memberCreate.line = body.line;
+        memberCreate.flagserver = '1';
 
         await this.MemberCollection.create(memberCreate);
         memberCreate.password = '';
-        memberCreate.macaddress = '';
-        memberCreate.hashmac = '';
+
+        // เก็บ Log file
+        const dataForLog = await this.MemberCollection.findOne({ username: body.username });
+        const data = new Uint8Array(Buffer.from(
+            ` เวลา ${new Date()} จาก {api/admin, POST} ผู้ใช้ [${accessToken}] : สร้างบัญชี ${dataForLog.username} [id: ${dataForLog.id}] \n`
+        ));
+        f.open('userlog.log', 'a', (err, fd) => {
+            f.appendFile(fd, data, `utf8`, (err) => {
+                f.close(fd, (err) => {
+                    if (err) throw err;
+                });
+                if (err) throw err;
+            });
+            if (err) throw err;
+        });
+
         return memberCreate;
     }
 
-    async getAdminItems(searchOption: ISearch): Promise<IMember> {
+    async getAdminItems(searchOption: ISearch, accessToken): Promise<IMember> {
         let queryItemFunction = () => this.MemberCollection.find({ 'role': 2 }, {
             image: false,
             password: false,
-            hashmac: false,
             _id: false,
         }); // ตอนเสิชจะได้ไม่ต้องมา query ซ้ำๆ
 
@@ -97,7 +124,6 @@ export class AdminService {
                     queryItemFunction = () => this.MemberCollection.find(conditions, {
                         image: false,
                         password: false,
-                        hashmac: false,
                         _id: false,
                     });      // {} คือ condition เอาไว้สำหรับ compiler จะมองเห็นเป้น type
                     break;
@@ -112,7 +138,6 @@ export class AdminService {
                     }, {
                         image: false,
                         password: false,
-                        hashmac: false,
                         _id: false,
                     });
                     break;
@@ -123,7 +148,6 @@ export class AdminService {
                     queryItemFunction = () => this.MemberCollection.find(conditions, {
                         image: false,
                         password: false,
-                        hashmac: false,
                         _id: false,
                     });      // {} คือ condition เอาไว้สำหรับ compiler จะมองเห็นเป้น type
                     break;
@@ -139,7 +163,58 @@ export class AdminService {
             .limit(searchOption.limitPage); // โดยฝั่ง frontend ตั้งไว้ limitPage = 5
         // ผลรวมของหน้าเพจทั้งหมด 
         const totalItems = await queryItemFunction().countDocuments({});
+
+        // เก็บ Log file
+        // const data = new Uint8Array(Buffer.from(
+        //     ` เวลา ${new Date()} จาก {api/admin, GET} ผู้ใช้ ${accessToken} แสดงรายการสมาชิก \n`
+        // ));
+        // f.open('app2.log.txt', 'a', (err, fd) => {
+        //     f.appendFile(fd, data, `utf8`, (err) => {
+        //         f.close(fd, (err) => {
+        //             if (err) throw err;
+        //         });
+        //         if (err) throw err;
+        //     });
+        //     if (err) throw err;
+        // });
         return { items, totalItems };
+    }
+
+    // แก้ไขข้อมูลดโปรไฟล์
+    async onUpdateAdminProfile(memberID: any, body: IProfile) {
+        // return [memberID, body];
+        const updated = await this.MemberCollection.updateOne({ _id: memberID }, {
+            firstname: body.firstname,
+            lastname: body.lastname,
+            telphone: body.telphone,
+            email: body.email,
+            facebook: body.facebook,
+            line: body.line,
+            image: body.image,
+        });
+        if (!updated.ok) throw new BadRequestException('ข้อมูลนี้ไม่มีการเปลี่ยนแปลง');
+        const memberItem = await this.MemberCollection.findById(memberID, {
+            password: false,
+            hashmac: false,
+            _id: false,
+        });
+
+        // เก็บ Log file
+        const data = new Uint8Array(Buffer.from(
+            ` เวลา ${new Date()} จาก {api/admin/profile-admin, POST} ผู้ใช้ ${memberItem.username} [${memberID}] แก้ไขข้อมูลส่วนตัว \n`
+        ));
+        f.open('userlog.log', 'a', (err, fd) => {
+            f.appendFile(fd, data, `utf8`, (err) => {
+                f.close(fd, (err) => {
+                    if (err) throw err;
+                });
+                if (err) throw err;
+            });
+            if (err) throw err;
+        });
+
+        return memberItem;
+
     }
 
 

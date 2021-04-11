@@ -1,12 +1,9 @@
-import { Controller, Get, Post, Body, BadRequestException, Logger } from '@nestjs/common';
-import { fstat } from 'node:fs';
-import { CombineLatestSubscriber } from 'rxjs/internal/observable/combineLatest';
+import { Controller, Post, Body, Logger } from '@nestjs/common';
 import { ForgotModel } from 'src/models/forgot-password.model';
 import { LoginModel } from 'src/models/login.model';
 import { RegisterModel } from '../models/register.model';
 import { ValidationPipe } from '../pipes/validation.pipe';
 import { AppService } from '../services/app.service';
-import * as f from 'fs';
 
 @Controller('api/account')
 export class AccountController {
@@ -14,7 +11,7 @@ export class AccountController {
         private service: AppService,
     ) { }
 
-    private logger = new Logger(AccountController.name);
+    // private logger = new Logger(AccountController.name);
 
     @Post('register') // ลงทะเบียน
     register(@Body(new ValidationPipe()) body: RegisterModel) {
@@ -23,7 +20,6 @@ export class AccountController {
 
     @Post('login') // เข้าสู่ระบบ
     login(@Body(new ValidationPipe()) body: LoginModel) {
-        // this.logger.log('ทำการลอคอิน');
         return this.service.onLogin(body);
     }
 

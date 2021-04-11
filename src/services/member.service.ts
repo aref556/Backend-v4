@@ -4,6 +4,7 @@ import { Model } from "mongoose";
 import { generate, verify } from "password-hash";
 import { IAccount, IAddress, IChangePassword, IChangeRSAkey, IMember, IProfile, ISearch, RoleAccount } from "src/interfaces/app.interface";
 import { IMemberDocument } from '../interfaces/member.interface'
+import * as f from "fs"
 
 @Injectable()
 export class MemberService {
@@ -26,12 +27,28 @@ export class MemberService {
     }
 
     //ลบข้อมูลสมาชิก
-    async deleteMemberItem(memberID: any) {
+    async deleteMemberItem(memberID: any, accessToken: string) {
+
+        // เก็บ Log file
+        const dataForLog = await this.MemberCollection.findOne({ _id: memberID });
+        const data = new Uint8Array(Buffer.from(
+            ` เวลา ${new Date()} จาก {api/member/${memberID}, DELETE} ผู้ใช้ [${accessToken}] : ลบข้อมูล ${dataForLog.username} [id: ${dataForLog.id}] \n`
+        ));
+        f.open('userlog.log', 'a', (err, fd) => {
+            f.appendFile(fd, data, `utf8`, (err) => {
+                f.close(fd, (err) => {
+                    if (err) throw err;
+                });
+                if (err) throw err;
+            });
+            if (err) throw err;
+        });
+
         return await this.MemberCollection.deleteOne({ _id: memberID });
     }
 
     // อัพเดท flag
-    async updataFlagofMemberItem(memberID: any) {
+    async updataFlagofMemberItem(memberID: any, accessToken: string) {
         const memberItem = await this.MemberCollection.findById(memberID);
         if (!memberItem) throw new BadRequestException('ไม่มีข้อมูลนี้ในระบบ');
         try {
@@ -42,6 +59,21 @@ export class MemberService {
                     flagrsa: 3,
                 });
                 const memberItemUpdate = await this.MemberCollection.findById(memberID);
+
+                // เก็บ Log file
+                const dataForLog = await this.MemberCollection.findOne({ _id: memberID });
+                const data = new Uint8Array(Buffer.from(
+                    ` เวลา ${new Date()} จาก {api/member/${memberID}, POST} ผู้ใช้ [${accessToken}] : อนุมัตการดึงข้อมูล ${dataForLog.username} [id: ${dataForLog.id}] \n`
+                ));
+                f.open('userlog.log', 'a', (err, fd) => {
+                    f.appendFile(fd, data, `utf8`, (err) => {
+                        f.close(fd, (err) => {
+                            if (err) throw err;
+                        });
+                        if (err) throw err;
+                    });
+                    if (err) throw err;
+                });
                 return memberItemUpdate;
             }
         }
@@ -51,7 +83,7 @@ export class MemberService {
     }
 
     //แก้ไชช้อมูลสมาชิก
-    async updateMemberItem(memberID: any, body: IAccount) {
+    async updateMemberItem(memberID: any, body: IAccount, accessToken: string) {
         const memberUpdate = await this.MemberCollection.findById(memberID);
         if (!memberUpdate) throw new BadRequestException('ไม่มีข้อมูลนี้ในระบบ');
         try {
@@ -85,6 +117,23 @@ export class MemberService {
 
             const updated = await this.MemberCollection.updateOne({ _id: memberID }, memberUpdate);
             if (!updated.ok) throw new BadRequestException('ไม่สามารถแก้ไขข้อมูลได้');
+
+            // เก็บ Log file
+            const dataForLog = await this.MemberCollection.findOne({ username: body.username });
+            const data = new Uint8Array(Buffer.from(
+                ` เวลา ${new Date()} จาก {api/member/${memberID}, PUT} ผู้ใช้ [${accessToken}] : แก้ไขข้อมูล ${dataForLog.username} [id: ${dataForLog.id}] \n`
+            ));
+            f.open('userlog.log', 'a', (err, fd) => {
+                f.appendFile(fd, data, `utf8`, (err) => {
+                    f.close(fd, (err) => {
+                        if (err) throw err;
+                    });
+                    if (err) throw err;
+                });
+                if (err) throw err;
+            });
+
+
             return await this.MemberCollection.findById(memberID, {
                 password: false,
                 hashmac: false,
@@ -96,7 +145,7 @@ export class MemberService {
         }
     }
 
-   
+
 
 
     //แสดงข้อมูลสมาชิกคนเดียว
@@ -105,12 +154,13 @@ export class MemberService {
             password: false,
             hashmac: false,
         });
+
         return memberItem;
 
     }
 
     //สร้างข้อมูลสมาชิกใหม่
-    async createMemberItem(body: IAccount) {
+    async createMemberItem(body: IAccount, accessToken: string) {
         const count = await this.MemberCollection.countDocuments({ username: body.username });
         if (count > 0) throw new BadRequestException(`มีบัญชีผู้ใช้นี้อยู่ในระบบแล้ว`);
         body.password = generate(body.password);
@@ -145,10 +195,27 @@ export class MemberService {
         memberCreate.password = '';
         memberCreate.macaddress = '';
         memberCreate.hashmac = '';
+
+        // เก็บ Log file
+        const dataForLog = await this.MemberCollection.findOne({ username: body.username });
+        const data = new Uint8Array(Buffer.from(
+            ` เวลา ${new Date()} จาก {api/member, POST} ผู้ใช้ [${accessToken}] : สร้างบัญชี ${dataForLog.username} [id: ${dataForLog.id}] \n`
+        ));
+        f.open('userlog.log', 'a', (err, fd) => {
+            f.appendFile(fd, data, `utf8`, (err) => {
+                f.close(fd, (err) => {
+                    if (err) throw err;
+                });
+                if (err) throw err;
+            });
+            if (err) throw err;
+        });
+
+
         return memberCreate;
     }
 
-    
+
 
     // แสดงข้อมูลสมาชิก
     async getMemberItems(searchOption: ISearch): Promise<IMember> {
@@ -210,10 +277,26 @@ export class MemberService {
             .limit(searchOption.limitPage); // โดยฝั่ง frontend ตั้งไว้ limitPage = 5
         // ผลรวมของหน้าเพจทั้งหมด 
         const totalItems = await queryItemFunction().countDocuments({});
+
+        // เก็บ Log file
+        // const data = new Uint8Array(Buffer.from(
+        //     ` เวลา ${new Date()} จาก {api/member, GET} ผู้ใช้ ${accessToken} แสดงรายการสมาชิก \n`
+        // ));
+        // f.open('app2.log.txt', 'a', (err, fd) => {
+        //     f.appendFile(fd, data, `utf8`, (err) => {
+        //         f.close(fd, (err) => {
+        //             if (err) throw err;
+        //         });
+        //         if (err) throw err;
+        //     });
+        //     if (err) throw err;
+        // });
+
+
         return { items, totalItems };
     }
 
-  
+
 
 
     // เปลี่ยนรหัสผ่าน
@@ -230,6 +313,7 @@ export class MemberService {
 
 
     async onChangeRSAkey(memberID: any, body: IChangeRSAkey) {
+        // console.log(accessToken);
         // const memberItem = await this.MemberCollection.findById(memberID);
         const updated = await this.MemberCollection.updateOne({ _id: memberID }, {
             rsakey: body.rsakey,
@@ -241,6 +325,22 @@ export class MemberService {
             hashmac: false,
             _id: false,
         });
+
+        // เก็บ Log file
+        const dataForLog = await this.MemberCollection.findOne({ _id: memberID });
+        const data = new Uint8Array(Buffer.from(
+            ` เวลา ${new Date()} จาก {api/member/rsa-key, POST} ผู้ใช้ ${dataForLog.username} [id: ${dataForLog.id}] : อัพเดท RSA KEY \n`
+        ));
+        f.open('userlog.log', 'a', (err, fd) => {
+            f.appendFile(fd, data, `utf8`, (err) => {
+                f.close(fd, (err) => {
+                    if (err) throw err;
+                });
+                if (err) throw err;
+            });
+            if (err) throw err;
+        });
+
         return memberItem;
     }
 
@@ -263,6 +363,21 @@ export class MemberService {
             hashmac: false,
             _id: false,
         });
+
+        // เก็บ Log file
+        const dataForLog = await this.MemberCollection.findOne({ _id: memberID });
+        const data = new Uint8Array(Buffer.from(
+            ` เวลา ${new Date()} จาก {api/member/address, POST} ผู้ใช้ ${dataForLog.username} [id: ${dataForLog.id}] : แก้ไข \n`
+        ));
+        f.open('userlog.log', 'a', (err, fd) => {
+            f.appendFile(fd, data, `utf8`, (err) => {
+                f.close(fd, (err) => {
+                    if (err) throw err;
+                });
+                if (err) throw err;
+            });
+            if (err) throw err;
+        });
         return memberItem;
 
     }
@@ -275,6 +390,23 @@ export class MemberService {
         const updated = await this.MemberCollection.updateOne({ _id: memberID }, <IAccount>{
             password: generate(body.new_pass),
         });
+
+        // เก็บ Log file
+        const dataForLog = await this.MemberCollection.findOne({ _id: memberID });
+        const data = new Uint8Array(Buffer.from(
+            ` เวลา ${new Date()} จาก {api/member/change-password, POST} ผู้ใช้ ${dataForLog.username} [id: ${dataForLog.id}] : เปลี่ยนรหัสผ่าน \n`
+        ));
+        f.open('userlog.log', 'a', (err, fd) => {
+            f.appendFile(fd, data, `utf8`, (err) => {
+                f.close(fd, (err) => {
+                    if (err) throw err;
+                });
+                if (err) throw err;
+            });
+            if (err) throw err;
+        });
+
+
         return updated;
     }
 
@@ -295,6 +427,21 @@ export class MemberService {
             password: false,
             hashmac: false,
             _id: false,
+        });
+
+        // เก็บ Log file
+        const dataForLog = await this.MemberCollection.findOne({ _id: memberID });
+        const data = new Uint8Array(Buffer.from(
+            ` เวลา ${new Date()} จาก {api/member/profile, POST} ผู้ใช้ ${dataForLog.username} [id: ${dataForLog.id}] : แก้ไขข้อมูลโปรไฟล์ \n`
+        ));
+        f.open('userlog.log', 'a', (err, fd) => {
+            f.appendFile(fd, data, `utf8`, (err) => {
+                f.close(fd, (err) => {
+                    if (err) throw err;
+                });
+                if (err) throw err;
+            });
+            if (err) throw err;
         });
 
         return memberItem;

@@ -2,6 +2,7 @@ import { IsMACAddress, IsMongoId, IsNotEmpty, Matches } from "class-validator";
 import { FlagAccount, IAccount, RoleAccount } from "src/interfaces/app.interface";
 
 export class CreateMemberModel implements IAccount {
+    date_new: Date;
     @IsNotEmpty()
     username: string;
 

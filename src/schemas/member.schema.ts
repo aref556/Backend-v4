@@ -37,5 +37,5 @@ export const memberSchema = new Schema({
         type: Date,
         default: Date.now
     },
-    id: String
+    id: String,
 });

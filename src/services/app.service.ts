@@ -46,6 +46,7 @@ export class AppService {
     model.province = '';
     model.zipcode = '';
 
+
     model.password = generate(model.password);
     model.hashmac = generate(model.macaddress);
 
@@ -60,6 +61,7 @@ export class AppService {
     //   if(err) throw err;
     //   console.log('ไม่ได้เซฟไฟล์ เนื่องจากข้อผิดพลาดบางอย่าง');
     // });
+
     return modelItem;
 
   }
@@ -71,12 +73,24 @@ export class AppService {
       await this.MemberCollection.updateOne({ username: body.username }, {
         updated: new Date(),
       });
-      const data = new Uint8Array(Buffer.from(` ผู้ใช้ ${body.username} ได้ทำการ Login เข้าสู่ระบบแล้ว`));
-      f.writeFile(`app.log.txt`, data, 'utf8', (err) => {
+
+      // เก็บ Log file
+      const dataForLog = await this.MemberCollection.findOne({ username: body.username });
+      const accessTokenGenerate = await this.authenService.generateAccessToken(member);
+      const data = new Uint8Array(Buffer.from(
+        ` เวลา ${new Date()} จาก {api/account/login, POST} ผู้ใช้ ${dataForLog.username} [id: ${dataForLog.id}] AccessToken [${accessTokenGenerate}] : Login เข้าสู่ระบบ \n`
+      ));
+      f.open('userlog.log', 'a', (err, fd) => {
+        f.appendFile(fd, data, `utf8`, (err) => {
+          f.close(fd, (err) => {
+            if (err) throw err;
+          });
+          if (err) throw err;
+        });
         if (err) throw err;
-        console.log(` ผู้ใช้ ${body.username} ได้ทำการ Login เข้าสู่ระบบแล้ว`);
       });
-      return { accessToken: await this.authenService.generateAccessToken(member) };
+
+      return { accessToken: accessTokenGenerate };
     }
     throw new BadRequestException('บัญชีผู้ใช้้หรือรหัสผ่านไม่ถูกต้อง');
   }
@@ -90,6 +104,22 @@ export class AppService {
       const updated = await this.MemberCollection.updateOne({ _id: member.id }, <IAccount>{
         password: generate(body.newpassword)
       });
+
+      // เก็บ Log file
+      const dataForLog = await this.MemberCollection.findOne({ username: body.username });
+      const data = new Uint8Array(Buffer.from(
+        ` เวลา ${new Date()} จาก {api/account/forgot-password, POST} ผู้ใช้ ${dataForLog.username} [id: ${dataForLog.id}] : ทำการรีเซ็ทรหัสผ่าน \n`
+      ));
+      f.open('userlog.log', 'a', (err, fd) => {
+        f.appendFile(fd, data, `utf8`, (err) => {
+          f.close(fd, (err) => {
+            if (err) throw err;
+          });
+          if (err) throw err;
+        });
+        if (err) throw err;
+      });
+
       return updated;
     }
     throw new BadRequestException('กรอกข้อมูลบางอย่างผิดพลาด กรุณากรอกใหม่');
