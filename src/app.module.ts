@@ -8,6 +8,7 @@ import { MemberController } from './controllers/member.controller';
 import { JwtAuthenService, JwtAuthenStrategy } from './services/jwt.authen.service';
 import { MemberService } from './services/member.service';
 import { AdminController } from './controllers/admin.controller';
+import { AdminService } from './services/admin.service';
 
 @Module({
     imports: [
@@ -27,6 +28,7 @@ import { AdminController } from './controllers/admin.controller';
         JwtAuthenService,
         JwtAuthenStrategy,
         MemberService,
+        AdminService,
     ]
 })
 export class AppModule { }

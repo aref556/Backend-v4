@@ -23,7 +23,7 @@ export class AccountController {
 
     @Post('login') // เข้าสู่ระบบ
     login(@Body(new ValidationPipe()) body: LoginModel) {
-        this.logger.log('ทำการลอคอิน');
+        // this.logger.log('ทำการลอคอิน');
         return this.service.onLogin(body);
     }
 

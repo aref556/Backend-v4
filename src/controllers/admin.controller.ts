@@ -6,13 +6,13 @@ import { CreateAdminModel, UpdateAdminModel } from "src/models/admin.model";
 import { ParamMemberModel } from "src/models/member.model";
 import { SearchModel } from "src/models/search.model";
 import { ValidationPipe } from "src/pipes/validation.pipe";
-import { MemberService } from "src/services/member.service";
+import { AdminService } from "src/services/admin.service";
 
 
 @Controller('api/admin')
 @UseGuards(AuthGuard('jwt'))
 export class AdminController {
-    constructor (private service: MemberService) { }
+    constructor (private service: AdminService) { }
 
     @Get() // แสดงข้อมูลรายการสมาชิก
     @UseGuards(new RoleGuard(RoleAccount.Superadmin))
@@ -25,13 +25,13 @@ export class AdminController {
     @Put(`:id`) // แก้ไขข้อมูลสมาชิกเดี่ยว
     @UseGuards(new RoleGuard(RoleAccount.Superadmin))
     updateAdmin(@Param(new ValidationPipe()) param: ParamMemberModel, @Body(new ValidationPipe()) body: UpdateAdminModel) {
-        return this.service.updateMemberItem(param.id, body);
+        return this.service.updateAdminItem(param.id, body);
     }
 
     @Post() // เพิ่มข้อมูลสมาชิก
     @UseGuards(new RoleGuard(RoleAccount.Admin, RoleAccount.Superadmin))
     createAdmin(@Body(new ValidationPipe()) body: CreateAdminModel) {
-        return this.service.createMemberItem(body);
+        return this.service.createAdminItem(body);
     }
 
 
