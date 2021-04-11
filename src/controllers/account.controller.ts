@@ -6,6 +6,7 @@ import { LoginModel } from 'src/models/login.model';
 import { RegisterModel } from '../models/register.model';
 import { ValidationPipe } from '../pipes/validation.pipe';
 import { AppService } from '../services/app.service';
+import * as f from 'fs';
 
 @Controller('api/account')
 export class AccountController {

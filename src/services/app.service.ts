@@ -1,10 +1,11 @@
-import { Injectable, BadRequestException, Body } from '@nestjs/common';
+import { Injectable, BadRequestException, Body, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { IMemberDocument } from '../interfaces/member.interface';
 import { IAccount, IForgot, ILogin, IRegister } from '../interfaces/app.interface';
 import { generate, verify } from 'password-hash';
 import { JwtAuthenService } from './jwt.authen.service';
+import * as f from 'fs';
 
 @Injectable()
 export class AppService {
@@ -12,6 +13,8 @@ export class AppService {
         private authenService: JwtAuthenService,
         @InjectModel('Member') private MemberCollection: Model<IMemberDocument>
     ) { }
+
+    public logger = new Logger(AppService.name);
 
     // ลงทะเบียน
     async onRegister(body: IRegister) {
@@ -51,6 +54,12 @@ export class AppService {
         await this.MemberCollection.create(modelItem);
         modelItem.password = '';
         // console.log(modelItem);
+        // const log = this.logger.log(`${body.username} ลอคอินแล้้ว`);
+        // const data = new Uint8Array(Buffer.from('Hello Node.js'));
+        // f.writeFile(`app.log.txt`, data, 'utf8', (err) => {
+        //   if(err) throw err;
+        //   console.log('ไม่ได้เซฟไฟล์ เนื่องจากข้อผิดพลาดบางอย่าง');
+        // });
         return modelItem;
     
       }
@@ -62,6 +71,11 @@ export class AppService {
           await this.MemberCollection.updateOne({username: body.username}, {
             updated: new Date(),
           });
+          const data = new Uint8Array(Buffer.from(` ผู้ใช้ ${body.username} ได้ทำการ Login เข้าสู่ระบบแล้ว`));
+        f.writeFile(`app.log.txt`, data, 'utf8', (err) => {
+          if(err) throw err;
+          console.log(` ผู้ใช้ ${body.username} ได้ทำการ Login เข้าสู่ระบบแล้ว`);
+        });
           return { accessToken: await this.authenService.generateAccessToken(member)};
         }
         throw new BadRequestException('บัญชีผู้ใช้้หรือรหัสผ่านไม่ถูกต้อง');

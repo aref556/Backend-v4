@@ -27,18 +27,26 @@ export class MemberService {
 
     //ลบข้อมูลสมาชิก
     async deleteMemberItem(memberID: any) {
-        return await this.MemberCollection.remove({ _id: memberID });
+        return await this.MemberCollection.deleteOne({ _id: memberID });
     }
 
     // อัพเดท flag
     async updataFlagofMemberItem(memberID: any) {
-
-        const memberUpdate = await this.MemberCollection.findById(memberID);
-        if (!memberUpdate) throw new BadRequestException('ไม่มีข้อมูลนี้ในระบบ');
-        if(memberUpdate.flagrsa == 1) return memberUpdate;
-        if(memberUpdate.flagrsa == 2) {
-            memberUpdate.flagrsa = 3;
-            return memberUpdate;
+        const memberItem = await this.MemberCollection.findById(memberID);
+        if (!memberItem) throw new BadRequestException('ไม่มีข้อมูลนี้ในระบบ');
+        try {
+            if (memberItem.flagrsa == 1) return memberItem;
+            if (memberItem.flagrsa == 3) return memberItem;
+            if (memberItem.flagrsa == 2) {
+                await this.MemberCollection.updateOne({ _id: memberID }, {
+                    flagrsa: 3,
+                });
+                const memberItemUpdate = await this.MemberCollection.findById(memberID);
+                return memberItemUpdate;
+            }
+        }
+        catch (ex) {
+            throw new BadRequestException(ex.message);
         }
     }
 
@@ -53,14 +61,17 @@ export class MemberService {
             memberUpdate.image = body.image || '';
             memberUpdate.role = body.role;
             memberUpdate.email = body.email;
-            // memberUpdate.password = generate(body.password) || '';
             memberUpdate.macaddress = body.macaddress;
-            memberUpdate.hashmac = generate(body.hashmac);
+
+            if (body.password && body.password.trim() != '')
+                memberUpdate.password = generate(body.password);
+            if (body.macaddress && body.macaddress.trim() != '')
+                memberUpdate.hashmac = generate(body.macaddress);
 
             const memberUpdateCount = await this.MemberCollection.countDocuments({ username: body.username });
             if (memberUpdate.username != body.username && memberUpdateCount > 0) throw new BadRequestException('บัญชีนี้มีในระบบแล้ว');
 
-            const updated = await this.MemberCollection.update({ _id: memberID }, memberUpdate);
+            const updated = await this.MemberCollection.updateOne({ _id: memberID }, memberUpdate);
             if (!updated.ok) throw new BadRequestException('ไม่สามารถแก้ไขข้อมูลได้');
             return await this.MemberCollection.findById(memberID);
 
@@ -73,9 +84,10 @@ export class MemberService {
 
     //แสดงข้อมูลสมาชิกคนเดียว
     async getMemberItem(memberID: any) {
-        const memberItem = await this.MemberCollection.findById(memberID, { password: false });
-        memberItem.password = '';
-        memberItem.hashmac = '';
+        const memberItem = await this.MemberCollection.findById(memberID, {
+            password: false,
+            hashmac: false,
+        });
         return memberItem;
 
     }
@@ -99,19 +111,18 @@ export class MemberService {
         memberCreate.rsakey = '';
         memberCreate.flagrsa = 1;
         memberCreate.flagserver = '0';
-        memberCreate.telphone = '';
-        memberCreate.facebook = '';
-        memberCreate.line = '';
-        //
+        memberCreate.telphone = body.telphone;
+        memberCreate.facebook = body.facebook;
+        memberCreate.line = body.line;
 
-        memberCreate.latitude = '';
-        memberCreate.longitude = '';
-        memberCreate.organization = '';
-        memberCreate.num = '';
-        memberCreate.subdistrict = '';
-        memberCreate.district = '';
-        memberCreate.province = '';
-        memberCreate.zipcode = '';
+        memberCreate.latitude = body.latitude;
+        memberCreate.longitude = body.longitude;
+        memberCreate.organization = body.organization;
+        memberCreate.num = body.num;
+        memberCreate.subdistrict = body.subdistrict;
+        memberCreate.district = body.district;
+        memberCreate.province = body.province;
+        memberCreate.zipcode = body.zipcode;
 
         await this.MemberCollection.create(memberCreate);
         memberCreate.password = '';
@@ -122,7 +133,12 @@ export class MemberService {
 
     // แสดงข้อมูลสมาชิก
     async getMemberItems(searchOption: ISearch): Promise<IMember> {
-        let queryItemFunction = () => this.MemberCollection.find({'role': 1}, { image: false }); // ตอนเสิชจะได้ไม่ต้องมา query ซ้ำๆ
+        let queryItemFunction = () => this.MemberCollection.find({ 'role': 1 }, {
+            image: false,
+            password: false,
+            hashmac: false,
+            _id: false,
+        }); // ตอนเสิชจะได้ไม่ต้องมา query ซ้ำๆ
 
         // ส่วนของการค้นหา
         if (searchOption.searchText && searchOption.searchType) {
@@ -132,8 +148,14 @@ export class MemberService {
             switch (type) {
                 case 'flagrsa': // เนื่องจาก ตัวแปร role จะทำการแปลงจาก enum เป้น int ไปแล้ว
                     conditions[type] = text;
+                    conditions['role'] = 1;
                     // จริงๆเราต้องการ .find({email ไง แต่ email ที่ว่าดันเป็น text ไม่ใช่ type เลยต้องทำแบบนี้})
-                    queryItemFunction = () => this.MemberCollection.find(conditions, { image: false });      // {} คือ condition เอาไว้สำหรับ compiler จะมองเห็นเป้น type
+                    queryItemFunction = () => this.MemberCollection.find(conditions, {
+                        image: false,
+                        password: false,
+                        hashmac: false,
+                        _id: false,
+                    });      // {} คือ condition เอาไว้สำหรับ compiler จะมองเห็นเป้น type
                     break;
                 case 'updated':
                     // console.log(text); // ซึ่งแสดงเป็น object 2 ตัว คือ from กับ to
@@ -141,12 +163,19 @@ export class MemberService {
                         updated: { // กำสั่งพวกนนี้มาจาก mongoose 
                             $gt: text['from'],
                             $lt: text['to']
-                        }
-                    }, { image: false });
+                        },
+                        role: 1,
+                    }, {
+                        image: false,
+                        password: false,
+                        hashmac: false,
+                        _id: false,
+                    });
                     break;
                 default:
                     conditions[type] = new RegExp(text, 'i');  // ใส่ i เพื่อให้สามารถค้นหาพิม์ใหญ่ พิม์เล็กได้
                     // จริงๆเราต้องการ .find({email ไง แต่ email ที่ว่าดันเป็น text ไม่ใช่ type เลยต้องทำแบบนี้})
+                    conditions['role'] = 1;
                     queryItemFunction = () => this.MemberCollection.find(conditions, { image: false });      // {} คือ condition เอาไว้สำหรับ compiler จะมองเห็นเป้น type
                     break;
             }
@@ -165,7 +194,12 @@ export class MemberService {
     }
 
     async getAdminItems(searchOption: ISearch): Promise<IMember> {
-        let queryItemFunction = () => this.MemberCollection.find({'role': 2}, { image: false }); // ตอนเสิชจะได้ไม่ต้องมา query ซ้ำๆ
+        let queryItemFunction = () => this.MemberCollection.find({ 'role': 2 }, {
+            image: false,
+            password: false,
+            hashmac: false,
+            _id: false,
+        }); // ตอนเสิชจะได้ไม่ต้องมา query ซ้ำๆ
 
         // ส่วนของการค้นหา
         if (searchOption.searchText && searchOption.searchType) {
@@ -175,8 +209,14 @@ export class MemberService {
             switch (type) {
                 case 'flagrsa': // เนื่องจาก ตัวแปร role จะทำการแปลงจาก enum เป้น int ไปแล้ว
                     conditions[type] = text;
+                    conditions['role'] = 2;
                     // จริงๆเราต้องการ .find({email ไง แต่ email ที่ว่าดันเป็น text ไม่ใช่ type เลยต้องทำแบบนี้})
-                    queryItemFunction = () => this.MemberCollection.find(conditions, { image: false });      // {} คือ condition เอาไว้สำหรับ compiler จะมองเห็นเป้น type
+                    queryItemFunction = () => this.MemberCollection.find(conditions, {
+                        image: false,
+                        password: false,
+                        hashmac: false,
+                        _id: false,
+                    });      // {} คือ condition เอาไว้สำหรับ compiler จะมองเห็นเป้น type
                     break;
                 case 'updated':
                     // console.log(text); // ซึ่งแสดงเป็น object 2 ตัว คือ from กับ to
@@ -184,13 +224,25 @@ export class MemberService {
                         updated: { // กำสั่งพวกนนี้มาจาก mongoose 
                             $gt: text['from'],
                             $lt: text['to']
-                        }
-                    }, { image: false });
+                        },
+                        role: 2,
+                    }, {
+                        image: false,
+                        password: false,
+                        hashmac: false,
+                        _id: false,
+                    });
                     break;
                 default:
                     conditions[type] = new RegExp(text, 'i');  // ใส่ i เพื่อให้สามารถค้นหาพิม์ใหญ่ พิม์เล็กได้
                     // จริงๆเราต้องการ .find({email ไง แต่ email ที่ว่าดันเป็น text ไม่ใช่ type เลยต้องทำแบบนี้})
-                    queryItemFunction = () => this.MemberCollection.find(conditions, { image: false });      // {} คือ condition เอาไว้สำหรับ compiler จะมองเห็นเป้น type
+                    conditions['role'] = 2;
+                    queryItemFunction = () => this.MemberCollection.find(conditions, {
+                        image: false,
+                        password: false,
+                        hashmac: false,
+                        _id: false,
+                    });      // {} คือ condition เอาไว้สำหรับ compiler จะมองเห็นเป้น type
                     break;
             }
 
@@ -227,7 +279,13 @@ export class MemberService {
             rsakey: body.rsakey,
             flagrsa: 2,
         });
-        return updated;
+        if (!updated.ok) throw new BadRequestException('ข้อมูลนี้ไม่มีการเปลี่ยนแปลง');
+        const memberItem = await this.MemberCollection.findById(memberID, {
+            password: false,
+            hashmac: false,
+            _id: false,
+        });
+        return memberItem;
     }
 
 
@@ -244,10 +302,11 @@ export class MemberService {
             zipcode: body.zipcode,
         });
         if (!updated.ok) throw new BadRequestException('ข้อมูลนี้ไม่มีการเปลี่ยนแปลง');
-        const memberItem = await this.MemberCollection.findById(memberID, { password: false });
-        memberItem.password = '';
-        memberItem.hashmac = '';
-        memberItem.macaddress = '';
+        const memberItem = await this.MemberCollection.findById(memberID, {
+            password: false,
+            hashmac: false,
+            _id: false,
+        });
         return memberItem;
 
     }
@@ -276,10 +335,12 @@ export class MemberService {
             image: body.image,
         });
         if (!updated.ok) throw new BadRequestException('ข้อมูลนี้ไม่มีการเปลี่ยนแปลง');
-        const memberItem = await this.MemberCollection.findById(memberID, { password: false });
-        memberItem.password = '';
-        memberItem.hashmac = '';
-        memberItem.macaddress = '';
+        const memberItem = await this.MemberCollection.findById(memberID, {
+            password: false,
+            hashmac: false,
+            _id: false,
+        });
+
         return memberItem;
 
     }

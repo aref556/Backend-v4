@@ -2,7 +2,7 @@ import { Controller, Get, UseGuards, Req, Post, Body, Query, Param, Put, Delete 
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { RoleGuard } from 'src/guards/role.guard';
-import { RoleAccount } from 'src/interfaces/app.interface';
+import { IAccount, RoleAccount } from 'src/interfaces/app.interface';
 import { IMemberDocument } from 'src/interfaces/member.interface';
 import { AddressModel } from 'src/models/address.model';
 import { AdminProfileModel } from 'src/models/admin-profile.model';
@@ -94,8 +94,8 @@ export class MemberController {
 
     @Post(`:id`) // อัพเดตแฟลก
     @UseGuards(new RoleGuard(RoleAccount.Admin, RoleAccount.Superadmin))
-    updateFlag(@Param(new ValidationPipe()) param: ParamMemberModel) {
-        console.log(param);
+    updateFlag(@Param(new ValidationPipe()) param: ParamMemberModel, @Body() flagrsa: IAccount ) {
+        // console.log(param);
         return this.service.updataFlagofMemberItem(param.id);
     }
 
